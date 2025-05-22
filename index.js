@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -28,6 +28,41 @@ async function run() {
 
 const plantsCollection = client.db('plantDB').collection('plants');
 
+app.get('/plants', async(req,res)=>{
+    const result = await plantsCollection.find ().toArray();
+    res.send(result);
+})
+
+
+
+
+
+app.get('/plant/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // Check if the ID is a valid ObjectId
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ObjectId format' });
+    }
+
+    const query = { _id: new ObjectId(id) };
+    const result = await plantsCollection.findOne(query);
+
+    if (!result) {
+      return res.status(404).json({ message: 'Plant not found' });
+    }
+
+    res.send(result);
+  } catch (error) {
+    console.error('Error in /plant/:id route:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+
 
    app.post('/plants', async (req, res) => {
       try {
@@ -41,6 +76,37 @@ const plantsCollection = client.db('plantDB').collection('plants');
         res.status(500).json({ message: 'Internal Server Error' });
       }
     });
+
+
+    app.put('/plant/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updateData = req.body;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ObjectId format' });
+    }
+
+    const filter = { _id: new ObjectId(id) };
+    const updateDoc = { $set: updateData };
+
+    const result = await plantsCollection.updateOne(filter, updateDoc);
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Plant not found' });
+    }
+
+    res.json({
+      acknowledged: result.acknowledged,
+      modifiedCount: result.modifiedCount,
+      message: 'Plant updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating plant:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 
 
     // Send a ping to confirm a successful connection
