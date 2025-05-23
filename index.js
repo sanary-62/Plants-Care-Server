@@ -27,6 +27,7 @@ async function run() {
     await client.connect();
 
 const plantsCollection = client.db('plantDB').collection('plants');
+const usersCollection = client.db('plantDB').collection('users');
 
 app.get('/plants', async(req,res)=>{
     const result = await plantsCollection.find ().toArray();
@@ -77,6 +78,20 @@ app.get('/plant/:id', async (req, res) => {
       }
     });
 
+     app.patch('/users',async (req,res) => {
+        const {email, lastSignInTime} = req.body;
+        const filter = { email: email}
+        const updateDoc = {
+            $set : {
+                lastSignInTime: lastSignInTime
+            }
+        }
+
+        const result= await usersCollection.updateOne(filter,updateDoc)
+        res.send(result)
+     })
+
+
 
     app.put('/plant/:id', async (req, res) => {
   try {
@@ -107,6 +122,30 @@ app.get('/plant/:id', async (req, res) => {
   }
 });
 
+
+//User related APIs
+
+
+
+
+app.get ('/users',async(req,res) => {
+    const result = await usersCollection.find().toArray();
+    res.send(result);
+})
+
+
+
+
+
+
+
+
+app.post('/users',async(req,res) => {
+    const userProfile = req.body;
+    console.log (userProfile)
+    const result = await usersCollection.insertOne(userProfile);
+    res.send(result);
+})
 
 
     // Send a ping to confirm a successful connection
